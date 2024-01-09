@@ -1,0 +1,6 @@
+ram @ git+https://github.com/xinyu1205/recognize-anything.git@main
+setuptools
+pydantic
+fastapi
+uvicorn
+python-multipart
