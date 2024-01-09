@@ -7,6 +7,7 @@ from PIL import Image
 import io
 import os
 import json
+import requests
 from __version__ import __version__
 
 host = os.getenv("HOST", "*")
@@ -15,6 +16,13 @@ salad_machine_id = os.getenv("SALAD_MACHINE_ID", "")
 salad_container_group_id = os.getenv("SALAD_CONTAINER_GROUP_ID", "")
 
 model = load_model()
+
+
+def download_image(url):
+    r = requests.get(url)
+    image = Image.open(io.BytesIO(r.content))
+    return image
+
 
 app = FastAPI()
 
@@ -36,6 +44,23 @@ async def get_image_tags(file: UploadFile = File(...)):
         "X-Salad-Machine-ID": salad_machine_id,
         "X-Salad-Container-Group-ID": salad_container_group_id,
         "X-Inference-Time": f"{stop-start:.4f}",
+    }
+    return Response(content=json.dumps({"tags": tags}), headers=headers)
+
+
+@app.get("/tag")
+async def get_image_tags_from_url(url: str):
+    start = time.perf_counter()
+    image = download_image(url)
+    image_download_time = time.perf_counter() - start
+    start = time.perf_counter()
+    tags = tag_image(model, prepare_image(image))
+    inference_time = time.perf_counter() - start
+    headers = {
+        "X-Salad-Machine-ID": salad_machine_id,
+        "X-Salad-Container-Group-ID": salad_container_group_id,
+        "X-Inference-Time": f"{inference_time:.4f}",
+        "X-Image-Download-Time": f"{image_download_time:.4f}",
     }
     return Response(content=json.dumps({"tags": tags}), headers=headers)
 
