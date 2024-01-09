@@ -8,9 +8,12 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-
-COPY src/ .
-
 RUN python -c "from clip import clip; clip.load('ViT-B/16')"
+
+WORKDIR /app/data
+COPY src/data .
+
+WORKDIR /app
+COPY src/*.py .
 
 CMD ["python", "server.py"]
